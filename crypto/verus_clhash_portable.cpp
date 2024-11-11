@@ -107,7 +107,13 @@ u128 _mm_clmulepi64_si128_emu(const __m128i &a, const __m128i &b, int imm)
 u128 _mm_mulhrs_epi16_emu(__m128i _a, __m128i _b)
 {
     int16_t result[8];
-    int16_t *a = (int16_t*)&_a, *b = (int16_t*)&_b;
+    int16_t *a = (int16_t*)&_a;
+    int16_t *b = (int16_t*)&_b;
+
+    // Ensure _a and _b are properly initialized
+    memset(a, 0, sizeof(int16_t) * 8);
+    memset(b, 0, sizeof(int16_t) * 8);
+
     for (int i = 0; i < 8; i ++)
     {
         result[i] = (int16_t)((((int32_t)(a[i]) * (int32_t)(b[i])) + 0x4000) >> 15);
@@ -134,18 +140,24 @@ u128 _mm_mulhrs_epi16_emu(__m128i _a, __m128i _b)
 
 inline u128 _mm_set_epi64x_emu(uint64_t hi, uint64_t lo)
 {
-    __m128i result;
-    ((uint64_t *)&result)[0] = lo;
-    ((uint64_t *)&result)[1] = hi;
-    return result;
+    union {
+        __m128i result;
+        uint64_t u64[2];
+    } u;
+    u.u64[0] = lo;
+    u.u64[1] = hi;
+    return u.result;
 }
 
 inline u128 _mm_cvtsi64_si128_emu(uint64_t lo)
 {
-    __m128i result;
-    ((uint64_t *)&result)[0] = lo;
-    ((uint64_t *)&result)[1] = 0;
-    return result;
+    union {
+        __m128i result;
+        uint64_t u64[2];
+    } u;
+    u.u64[0] = lo;
+    u.u64[1] = 0;
+    return u.result;
 }
 
 inline int64_t _mm_cvtsi128_si64_emu(const __m128i &a)
@@ -160,24 +172,15 @@ inline int32_t _mm_cvtsi128_si32_emu(const __m128i &a)
 
 inline u128 _mm_cvtsi32_si128_emu(uint32_t lo)
 {
-    __m128i result;
-    ((uint32_t *)&result)[0] = lo;
-    ((uint32_t *)&result)[1] = 0;
-    ((uint64_t *)&result)[1] = 0;
-
-    /*
-    const __m128i testresult = _mm_cvtsi32_si128(lo);
-    if (!memcmp(&testresult, &result, 16))
-    {
-        printf("_mm_cvtsi32_si128_emu: Portable version passed!\n");
-    }
-    else
-    {
-        printf("_mm_cvtsi32_si128_emu: Portable version failed!\n");
-    }
-    */
-
-    return result;
+    union {
+        __m128i result;
+        uint32_t u32[4];
+    } u;
+    u.u32[0] = lo;
+    u.u32[1] = 0;
+    u.u32[2] = 0;
+    u.u32[3] = 0;
+    return u.result;
 }
 
 u128 _mm_setr_epi8_emu(u_char c0, u_char c1, u_char c2, u_char c3, u_char c4, u_char c5, u_char c6, u_char c7, u_char c8, u_char c9, u_char c10, u_char c11, u_char c12, u_char c13, u_char c14, u_char c15)
