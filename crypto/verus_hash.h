@@ -121,7 +121,7 @@ class CVerusHashV2
             int left = 32 - pos;
             do
             {
-                int len = left > sizeof(T) ? sizeof(T) : left;
+                int len = left > (int)sizeof(T) ? (int)sizeof(T) : left;
                 std::memcpy(curBuf + 32 + pos, data, len);
                 pos += len;
                 left -= len;

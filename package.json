@@ -1,15 +1,28 @@
 {
-    "name": "verushash",
-    "author": "hellcatz",
-    "version": "0.0.6",
-    "scripts": {
-        "test": "node test.js"
+  "name": "verushash",
+  "author": "ComputerGenie",
+  "version": "0.1.0",
+  "contributors": [
+    {
+      "name": "hellcatz",
+      "url": "https://github.com/hellcatz"
     },
-    "main": "verushash",
-    "bundleDependencies": true,
-    "dependencies": {
-        "bindings": "*",
-        "nan": "*",
-        "node-gyp": "*"
+    {
+      "name": "muscleman",
+      "url": "https://github.com/muscleman"
+    },
+    {
+      "name": "VerusCoin",
+      "url": "https://github.com/VerusCoin"
     }
+  ],
+  "scripts": {
+    "test": "node test.js"
+  },
+  "bundleDependencies": true,
+  "dependencies": {
+    "bindings": "^1.5.0",
+    "nan": "^2.22.0",
+    "node-gyp": "^10.2.0"
+  }
 }

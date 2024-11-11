@@ -70,7 +70,7 @@ static inline __attribute__((always_inline))  __m128i _mm_mulhrs_epi16(__m128i _
 {
 	int16_t result[8];
 	int16_t *a = (int16_t*)&_a, *b = (int16_t*)&_b;
-	for (int i = 0; i < 8; i++)
+	for (size_t i = 0; i < 8; i++)
 	{
 		result[i] = (int16_t)((((int32_t)(a[i]) * (int32_t)(b[i])) + 0x4000) >> 15);
 	}
@@ -122,7 +122,7 @@ __m128i _mm_setr_epi8(u_char c0, u_char c1, u_char c2, u_char c3, u_char c4, u_c
 __m128i _mm_shuffle_epi8(__m128i a, __m128i b)
 {
 	__m128i result;
-	for (int i = 0; i < 16; i++)
+	for (size_t i = 0; i < 16; i++)
 	{
 		if (((uint8_t *)&b)[i] & 0x80)
 		{
@@ -223,7 +223,7 @@ __m128i __verusclmulwithoutreduction64alignedrepeat(__m128i *randomsource, const
     // be used to xor into the accumulator before it is hashed with other values first
     __m128i acc = _mm_load_si128(randomsource + (keyMask + 2));
 
-    for (int64_t i = 0; i < 32; i++)
+    for (size_t i = 0; i < 32; i++)
     {
         const uint64_t selector = _mm_cvtsi128_si64(acc);
 
@@ -397,7 +397,7 @@ __m128i __verusclmulwithoutreduction64alignedrepeat(__m128i *randomsource, const
 
                 do
                 {
-                    if (selector & (0x10000000 << rounds))
+                    if (selector & (((uint64_t)0x10000000) << rounds))
                     {
                         onekey = _mm_load_si128(rc++);
                         const __m128i temp2 = _mm_load_si128(rounds & 1 ? pbuf : buftmp);
@@ -506,7 +506,7 @@ __m128i __verusclmulwithoutreduction64alignedrepeat_sv2_1(__m128i *randomsource,
     // be used to xor into the accumulator before it is hashed with other values first
     __m128i acc = _mm_load_si128(randomsource + (keyMask + 2));
 
-    for (int64_t i = 0; i < 32; i++)
+    for (size_t i = 0; i < 32; i++)
     {
         const uint64_t selector = _mm_cvtsi128_si64(acc);
 
@@ -788,7 +788,7 @@ __m128i __verusclmulwithoutreduction64alignedrepeat_sv2_2(__m128i *randomsource,
     // be used to xor into the accumulator before it is hashed with other values first
     __m128i acc = _mm_load_si128(randomsource + (keyMask + 2));
 
-    for (int64_t i = 0; i < 32; i++)
+    for (size_t i = 0; i < 32; i++)
     {
         const uint64_t selector = _mm_cvtsi128_si64(acc);
 

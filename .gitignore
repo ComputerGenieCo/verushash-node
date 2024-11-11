@@ -2,3 +2,4 @@
 build/
 crypto.node
 .vscode/settings.json
+node_modules

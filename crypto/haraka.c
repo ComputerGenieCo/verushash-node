@@ -28,9 +28,12 @@ Optimized Implementations for Haraka256 and Haraka512
 #include "haraka.h"
 
 u128 rc[40];
-u128 rc0[40] = {0};
+u128 rc0[40];
 
 void load_constants() {
+  for (int i = 0; i < 40; i++) {
+    rc0[i] = _mm_setzero_si128();
+  }
   rc[0] = _mm_set_epi32(0x0684704c,0xe620c00a,0xb2c5fef0,0x75817b9d);
   rc[1] = _mm_set_epi32(0x8b66b4e1,0x88f3a06b,0x640f6ba4,0x2f08f717);
   rc[2] = _mm_set_epi32(0x3402de2d,0x53f28498,0xcf029d60,0x9f029114);
