@@ -42,7 +42,8 @@
 
 void clmul64(uint64_t a, uint64_t b, uint64_t* r)
 {
-    uint8_t s = 4,i; //window size
+    uint8_t s = 4; //window size
+    uint64_t i;
     uint64_t two_s = 1 << s; //2^s
     uint64_t smask = two_s-1; //s 1 bits
     uint64_t u[16];
