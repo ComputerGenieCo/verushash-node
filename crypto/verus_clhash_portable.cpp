@@ -46,23 +46,23 @@ void clmul64(uint64_t a, uint64_t b, uint64_t* r)
     uint64_t i;
     uint64_t two_s = 1 << s; //2^s
     uint64_t smask = two_s-1; //s 1 bits
-    uint64_t u[16];
+    __m128i u[16]; // Change to __m128i
     uint64_t tmp;
     uint64_t ifmask;
     //Precomputation
-    u[0] = 0;
-    u[1] = b;
+    u[0] = _mm_setzero_si128();
+    u[1] = _mm_cvtsi64_si128(b);
     for(i = 2 ; i < two_s; i += 2){
-        u[i] = u[i >> 1] << 1; //even indices: left shift
-        u[i + 1] = u[i] ^ b; //odd indices: xor b
+        u[i] = _mm_slli_epi64(u[i >> 1], 1); //even indices: left shift
+        u[i + 1] = _mm_xor_si128(u[i], _mm_cvtsi64_si128(b)); //odd indices: xor b
     }
     //Multiply
-    r[0] = u[a & smask]; //first window only affects lower word
-    r[1] = 0;
+    __m128i r0 = u[a & smask]; //first window only affects lower word
+    __m128i r1 = _mm_setzero_si128();
     for(i = s ; i < 64 ; i += s){
-        tmp = u[a >> i & smask];     
-        r[0] ^= tmp << i;
-        r[1] ^= tmp >> (64 - i);
+        tmp = _mm_cvtsi128_si64(u[a >> i & smask]);     
+        r0 = _mm_xor_si128(r0, _mm_slli_epi64(_mm_cvtsi64_si128(tmp), i));
+        r1 = _mm_xor_si128(r1, _mm_srli_epi64(_mm_cvtsi64_si128(tmp), (64 - i)));
     }
     //Repair
     uint64_t m = 0xEEEEEEEEEEEEEEEE; //s=4 => 16 times 1110
@@ -70,8 +70,10 @@ void clmul64(uint64_t a, uint64_t b, uint64_t* r)
         tmp = ((a & m) >> i);
         m &= m << 1; //shift mask to exclude all bit j': j' mod s = i
         ifmask = -((b >> (64-i)) & 1); //if the (64-i)th bit of b is 1
-        r[1] ^= (tmp & ifmask);
+        r1 = _mm_xor_si128(r1, _mm_and_si128(_mm_cvtsi64_si128(tmp), _mm_cvtsi64_si128(ifmask)));
     }
+    r[0] = _mm_cvtsi128_si64(r0);
+    r[1] = _mm_cvtsi128_si64(r1);
 }
 
 u128 _mm_clmulepi64_si128_emu(const __m128i &a, const __m128i &b, int imm)
@@ -829,32 +831,37 @@ __m128i __verusclmulwithoutreduction64alignedrepeat_sv2_1_port(__m128i *randomso
 
                 do
                 {
-                    if (selector & (((uint64_t)0x10000000) << rounds))
+                    // note that due to compiler and CPUs, we expect this to do:
+                    // if (selector & ((0x10000000 << rounds) & 0xffffffff) if rounds != 3 else selector & 0xffffffff80000000):
+                    if (selector & (0x10000000 << rounds))
                     {
                         onekey = _mm_load_si128_emu(rc++);
                         const __m128i temp2 = _mm_load_si128_emu(rounds & 1 ? pbuf : buftmp);
                         const __m128i add1 = _mm_xor_si128_emu(onekey, temp2);
-                        // cannot be zero here, may be negative
-                        const int32_t divisor = (uint32_t)selector;
-                        const int64_t dividend = _mm_cvtsi128_si64_emu(add1);
-                        const __m128i modulo = _mm_cvtsi32_si128_emu(dividend % divisor);
-                        acc = _mm_xor_si128_emu(modulo, acc);
+                        const __m128i clprod1 = _mm_clmulepi64_si128_emu(add1, add1, 0x10);
+                        acc = _mm_xor_si128_emu(clprod1, acc);
                     }
                     else
                     {
                         onekey = _mm_load_si128_emu(rc++);
                         __m128i temp2 = _mm_load_si128_emu(rounds & 1 ? buftmp : pbuf);
-                        const __m128i add1 = _mm_xor_si128_emu(onekey, temp2);
-                        const __m128i clprod1 = _mm_clmulepi64_si128_emu(add1, add1, 0x10);
-                        const __m128i clprod2 = _mm_mulhrs_epi16_emu(acc, clprod1);
-                        acc = _mm_xor_si128_emu(clprod2, acc);
+                        const uint64_t roundidx = aesroundoffset++ << 2;
+                        AES2_EMU(onekey, temp2, roundidx);
+
+                        MIX2_EMU(onekey, temp2);
+
+                        acc = _mm_xor_si128_emu(onekey, acc);
+                        acc = _mm_xor_si128_emu(temp2, acc);
                     }
                 } while (rounds--);
 
-                const __m128i tempa3 = _mm_load_si128_emu(prandex);
-                const __m128i tempa4 = _mm_xor_si128_emu(tempa3, acc);
-                _mm_store_si128_emu(prandex, tempa4);
-                _mm_store_si128_emu(prand, onekey);
+                const __m128i tempa1 = _mm_load_si128_emu(prand);
+                const __m128i tempa2 = _mm_mulhrs_epi16_emu(acc, tempa1);
+                const __m128i tempa3 = _mm_xor_si128_emu(tempa1, tempa2);
+
+                const __m128i tempa4 = _mm_load_si128_emu(prandex);
+                _mm_store_si128_emu(prandex, tempa3);
+                _mm_store_si128_emu(prand, tempa4);
                 break;
             }
             case 0x1c:
